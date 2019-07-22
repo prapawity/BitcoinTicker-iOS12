@@ -7,7 +7,8 @@
 //
 
 import UIKit
-
+import Alamofire
+import SwiftyJSON
 class ViewController: UIViewController {
     
     let baseURL = "https://apiv2.bitcoinaverage.com/indices/global/ticker/BTC"
@@ -22,7 +23,8 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-       
+       currencyPicker.delegate = self
+        currencyPicker.dataSource = self
     }
 
     
@@ -38,24 +40,20 @@ class ViewController: UIViewController {
 //    //MARK: - Networking
 //    /***************************************************************/
 //    
-//    func getWeatherData(url: String, parameters: [String : String]) {
-//        
-//        Alamofire.request(url, method: .get, parameters: parameters)
-//            .responseJSON { response in
-//                if response.result.isSuccess {
-//
-//                    print("Sucess! Got the weather data")
-//                    let weatherJSON : JSON = JSON(response.result.value!)
-//
-//                    self.updateWeatherData(json: weatherJSON)
-//
-//                } else {
-//                    print("Error: \(String(describing: response.result.error))")
-//                    self.bitcoinPriceLabel.text = "Connection Issues"
-//                }
-//            }
-//
-//    }
+    func getData(url: String) {
+        
+        AF.request(url, method: .get)
+            .responseJSON { response in
+                switch response.result{
+                case .success(_):
+                    self.updateData(json: JSON(response.value))
+                    break
+                case .failure(_):
+                    break
+                }
+            }
+
+    }
 //
 //    
 //    
@@ -64,22 +62,34 @@ class ViewController: UIViewController {
 //    //MARK: - JSON Parsing
 //    /***************************************************************/
 //    
-//    func updateWeatherData(json : JSON) {
-//        
-//        if let tempResult = json["main"]["temp"].double {
-//        
-//        weatherData.temperature = Int(round(tempResult!) - 273.15)
-//        weatherData.city = json["name"].stringValue
-//        weatherData.condition = json["weather"][0]["id"].intValue
-//        weatherData.weatherIconName =    weatherData.updateWeatherIcon(condition: weatherData.condition)
-//        }
-//        
-//        updateUIWithWeatherData()
-//    }
-//    
-
-
-
-
+    func updateData(json : JSON) {
+        if let ans = json["ask"].double{
+            bitcoinPriceLabel.text = "$\(ans)"
+        }else{
+            bitcoinPriceLabel.text = "Price Unavilable"
+        }
+        
+    }
+//
+    func check_name(name: String){
+        finalURL = baseURL+name
+        getData(url: finalURL)
+    }
+}
+extension ViewController: UIPickerViewDataSource,UIPickerViewDelegate{
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        return 1
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return currencyArray.count
+    }
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        return currencyArray[row]
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        check_name(name: currencyArray[row])
+    }
 }
 
